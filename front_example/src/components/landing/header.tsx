@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/ui/icon-button"
 import { cn } from "@/lib/utils"
 
 const logoSrc =
@@ -198,20 +199,17 @@ export function Header() {
             </Button>
           </motion.div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
+          <IconButton
+            label={isMobileMenuOpen ? "상단 메뉴 닫기" : "상단 메뉴 열기"}
             onClick={() => {
               setIsMobileMenuOpen((open) => !open)
               setExpandedMobileMenus([])
             }}
-            className="h-10 w-10 rounded-full text-[#0f172a] hover:bg-[#f1f5f9] lg:hidden"
-            aria-label={isMobileMenuOpen ? "상단 메뉴 닫기" : "상단 메뉴 열기"}
+            className="rounded-full border-transparent bg-transparent text-[#0f172a] shadow-none hover:bg-[#f1f5f9] lg:hidden"
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          </IconButton>
         </div>
       </div>
 

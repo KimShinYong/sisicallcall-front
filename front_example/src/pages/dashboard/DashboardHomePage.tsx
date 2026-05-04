@@ -5,18 +5,14 @@ import { CallList } from "@/components/dashboard/call-list"
 import { IntentChart } from "@/components/dashboard/intent-chart"
 import { PdfUpload } from "@/components/dashboard/pdf-upload"
 import { SentimentChart } from "@/components/dashboard/sentiment-chart"
+import { AnimatedSection } from "@/components/ui/animated-section"
 
 export function DashboardHomePage() {
   const [showAlert, setShowAlert] = useState(true)
 
   return (
     <div className="space-y-6 p-6">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center justify-between"
-      >
+      <AnimatedSection className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">대시보드</h1>
           <p className="text-sm text-muted-foreground">
@@ -31,7 +27,7 @@ export function DashboardHomePage() {
         >
           마지막 업데이트: {new Date().toLocaleTimeString("ko-KR")}
         </motion.div>
-      </motion.div>
+      </AnimatedSection>
 
       <AlertBanner count={3} onDismiss={() => setShowAlert(false)} isVisible={showAlert} />
 
