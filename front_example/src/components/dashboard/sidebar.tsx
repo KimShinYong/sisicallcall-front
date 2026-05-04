@@ -68,17 +68,23 @@ export function DashboardSidebar() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        className="flex h-16 items-center gap-2 border-b border-border px-6"
+        className="border-b border-border"
       >
-        <img
-          src={logoSrc}
-          alt="시시콜콜 로고"
-          width={40}
-          height={40}
-          className="max-w-[40px]"
-          style={{ mixBlendMode: "multiply" }}
-        />
-        <span className="text-lg font-bold text-foreground">시시콜콜</span>
+        <Link
+          to="/"
+          className="flex h-16 items-center gap-2 px-6 transition-colors hover:bg-muted/50"
+          aria-label="홈으로 이동"
+        >
+          <img
+            src={logoSrc}
+            alt="시시콜콜 로고"
+            width={40}
+            height={40}
+            className="max-w-[40px]"
+            style={{ mixBlendMode: "multiply" }}
+          />
+          <span className="text-lg font-bold text-foreground">시시콜콜</span>
+        </Link>
       </motion.div>
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
@@ -123,22 +129,6 @@ export function DashboardSidebar() {
           })}
         </ul>
       </nav>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="border-t border-border p-4"
-      >
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <motion.span whileHover={{ x: -3 }} transition={{ duration: 0.2 }}>
-            &larr;
-          </motion.span>
-          <span>홈으로 돌아가기</span>
-        </Link>
-      </motion.div>
     </motion.aside>
   )
 }
