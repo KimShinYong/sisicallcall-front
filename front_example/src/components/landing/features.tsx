@@ -1,6 +1,7 @@
 import { useRef } from "react"
 import { motion, useInView } from "framer-motion"
-import { Phone, MessageSquare, BarChart3, Clock, Shield, Zap } from "lucide-react"
+import { BarChart3, Clock, MessageSquare, Phone, Shield, Zap } from "lucide-react"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const features = [
@@ -14,7 +15,7 @@ const features = [
     icon: MessageSquare,
     title: "멀티채널 지원",
     description:
-      "전화, 카카오톡, 문자 등 다양한 채널을 하나의 플로우에서 통합 관리합니다.",
+      "전화, 카카오톡, 문자 등 다양한 채널을 하나의 플랫폼에서 통합 관리할 수 있습니다.",
   },
   {
     icon: BarChart3,
@@ -26,7 +27,7 @@ const features = [
     icon: Clock,
     title: "24시간 운영",
     description:
-      "AI가 쉬지 않고 고객 문의에 응대합니다. 영업 시간 외에도 놓치는 고객이 없습니다.",
+      "AI가 쉬지 않고 고객 문의에 응답합니다. 영업시간 외에도 놓치는 고객이 없습니다.",
   },
   {
     icon: Shield,
@@ -82,11 +83,10 @@ export function Features() {
             주요 기능
           </p>
           <h2 className="mt-2 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            고객 상담의 모든 흐름을 AI로 혁신하세요
+            고객 상담의 모든 것을 AI로 혁신하세요
           </h2>
           <p className="mt-4 text-pretty text-lg text-muted-foreground">
-            시시콜콜은 AI와 사람의 강점을 결합한 하이브리드 솔루션으로
-            최상의 고객 경험을 제공합니다.
+            시시콜콜은 AI와 사람의 강점을 결합한 하이브리드 솔루션으로 최상의 고객 경험을 제공합니다.
           </p>
         </motion.div>
 
@@ -109,7 +109,7 @@ export function Features() {
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
                       className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground"
                     >
-                      <feature.icon className="h-6 w-6" />
+                      <feature.icon className="h-6 w-6" aria-hidden="true" />
                     </motion.div>
                     <CardTitle className="text-xl text-card-foreground">{feature.title}</CardTitle>
                   </CardHeader>

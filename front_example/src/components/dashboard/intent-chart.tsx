@@ -1,6 +1,6 @@
-import { motion } from "framer-motion"
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MotionCard } from "@/components/ui/motion-card"
 
 const data = [
   { name: "결제 문의", value: 128 },
@@ -12,14 +12,10 @@ const data = [
 
 export function IntentChart() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+    <MotionCard
+      className="h-full bg-card p-0 py-6 text-card-foreground"
       transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -4, transition: { duration: 0.3 } }}
-      className="h-full"
     >
-      <Card className="h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold">주요 문의 의도</CardTitle>
         </CardHeader>
@@ -63,7 +59,6 @@ export function IntentChart() {
             </ResponsiveContainer>
           </div>
         </CardContent>
-      </Card>
-    </motion.div>
+    </MotionCard>
   )
 }

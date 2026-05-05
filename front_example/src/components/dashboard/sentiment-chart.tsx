@@ -1,6 +1,6 @@
-import { motion } from "framer-motion"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MotionCard } from "@/components/ui/motion-card"
 
 const data = [
   { name: "긍정", value: 45, color: "#14b8a6" },
@@ -10,14 +10,7 @@ const data = [
 
 export function SentimentChart() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -4, transition: { duration: 0.3 } }}
-      className="h-full"
-    >
-      <Card className="h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+    <MotionCard className="h-full bg-card p-0 py-6 text-card-foreground">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold">고객 감정 분포</CardTitle>
         </CardHeader>
@@ -60,7 +53,6 @@ export function SentimentChart() {
             </ResponsiveContainer>
           </div>
         </CardContent>
-      </Card>
-    </motion.div>
+    </MotionCard>
   )
 }

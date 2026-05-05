@@ -14,7 +14,7 @@ export function Logos() {
     <section className="border-y border-border bg-muted/30 py-12">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="mb-8 text-center text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          다양한 기업이 시시콜콜을 사용하고 있습니다
+          대한민국 대표 기업들이 시시콜콜을 사용하고 있습니다
         </p>
         <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12">
           {companies.map((company) => (
