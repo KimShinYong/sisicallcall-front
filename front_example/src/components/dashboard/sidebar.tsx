@@ -1,7 +1,16 @@
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
-import { LayoutDashboard, Phone, MessageSquareText, FileUp, ChevronRight } from "lucide-react"
+import {
+  ChevronRight,
+  FileUp,
+  LayoutDashboard,
+  LogOut,
+  MessageSquareText,
+  Phone,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/shared/auth/authStore"
 
 const logoSrc =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-F73u93gxOEnKoM0ShWO9oUBWEHDlnw.png"
@@ -56,6 +65,15 @@ const menuItemVariants = {
 
 export function DashboardSidebar() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const tenant = useAuthStore((state) => state.tenant)
+  const user = useAuthStore((state) => state.user)
+  const clearAuth = useAuthStore((state) => state.clearAuth)
+
+  const handleLogout = () => {
+    clearAuth()
+    navigate("/login", { replace: true })
+  }
 
   return (
     <motion.aside
@@ -107,11 +125,8 @@ export function DashboardSidebar() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
-                  <motion.span
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <item.icon className="h-5 w-5" />
+                  <motion.span>
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
                   </motion.span>
                   {item.label}
                   {isActive && (
@@ -120,7 +135,7 @@ export function DashboardSidebar() {
                       animate={{ opacity: 1, x: 0 }}
                       className="ml-auto"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
                     </motion.span>
                   )}
                 </Link>
@@ -129,6 +144,26 @@ export function DashboardSidebar() {
           })}
         </ul>
       </nav>
+      <div className="border-t border-border p-4">
+        <div className="mb-3 rounded-lg bg-muted/50 px-3 py-2">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {tenant?.name ?? "회사 정보 확인 중"}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {user?.email ?? "관리자 계정"}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          로그아웃
+        </Button>
+      </div>
     </motion.aside>
   )
 }
