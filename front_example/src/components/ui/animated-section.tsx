@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { motion, type HTMLMotionProps } from 'framer-motion'
+import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
 
@@ -17,13 +17,15 @@ function AnimatedSection({
   transition,
   ...props
 }: AnimatedSectionProps) {
+  const shouldReduceMotion = useReducedMotion()
+
   return (
     <motion.section
       data-slot="animated-section"
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once, margin: '-80px' }}
-      transition={transition ?? { duration: 0.35, delay, ease: 'easeOut' }}
+      transition={transition ?? { duration: shouldReduceMotion ? 0 : 0.35, delay, ease: 'easeOut' }}
       className={cn(className)}
       {...props}
     >

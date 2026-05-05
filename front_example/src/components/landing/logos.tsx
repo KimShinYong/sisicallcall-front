@@ -20,7 +20,7 @@ export function Logos() {
           {companies.map((company) => (
             <div
               key={company}
-              className="flex h-10 items-center justify-center rounded-lg bg-background px-6 py-2 text-sm font-semibold text-muted-foreground shadow-sm transition-all hover:shadow-md"
+              className="flex h-10 items-center justify-center rounded-lg bg-background px-6 py-2 text-sm font-semibold text-muted-foreground shadow-sm transition-all"
             >
               {company}
             </div>

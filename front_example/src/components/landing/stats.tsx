@@ -78,7 +78,6 @@ export function Stats() {
             <motion.div
               key={stat.label}
               variants={itemVariants}
-              whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className="group text-center"
             >
