@@ -15,6 +15,7 @@ export const endpoints = {
   callList: "/call",
   callDetail: (callId: string) => `/call/${callId}`,
   callTranscripts: (callId: string) => `/call/${callId}/transcripts`,
+  callActions: (callId: string) => `/post-call/${callId}/actions`,
 
   callSummary: (callId: string) => `/summary/${callId}`,
 
@@ -22,4 +23,13 @@ export const endpoints = {
   tenantDocuments: (tenantId: string) => `/tenant/${tenantId}/documents`,
   tenantDocumentDetail: (tenantId: string, documentId: string) =>
     `/tenant/${tenantId}/documents/${documentId}`,
+  tenantDocumentChunks: (tenantId: string, documentId: string) =>
+    `/tenant/${tenantId}/documents/${documentId}/chunks`,
+  tenantDocumentChunkDetail: (
+    tenantId: string,
+    documentId: string,
+    chunkId: string,
+  ) => `/tenant/${tenantId}/documents/${documentId}/chunks/${chunkId}`,
+  tenantDocumentReindex: (tenantId: string, documentId: string) =>
+    `/tenant/${tenantId}/documents/${documentId}/reindex`,
 } as const

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Bot, Clock, MessageSquare, Phone, User } from "lucide-react"
+import { Activity, Bot, Clock, MessageSquare, Phone, User } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Sheet,
@@ -29,11 +29,17 @@ import {
 } from "@/features/calls/callsAdapters"
 import {
   useCallDetail,
+  useCallMcpActions,
   useCalls,
   useCallSummary,
   useCallTranscripts,
 } from "@/features/calls/callsQueries"
-import type { BackendCall, CallStatus } from "@/features/calls/callsTypes"
+import type {
+  BackendCall,
+  CallStatus,
+  McpActionLog,
+  McpActionStatus,
+} from "@/features/calls/callsTypes"
 import { cn } from "@/lib/utils"
 
 const DEFAULT_QUERY = {
@@ -72,17 +78,142 @@ function CallsTableSkeleton() {
   )
 }
 
+function formatJsonPayload(payload: Record<string, unknown>) {
+  return JSON.stringify(payload ?? {}, null, 2)
+}
+
+function getMcpActionTypeClassName(actionType: string) {
+  switch (actionType) {
+    case "gmail":
+      return "border-red-200 bg-red-50 text-red-700"
+    case "calendar":
+      return "border-blue-200 bg-blue-50 text-blue-700"
+    case "company_db":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700"
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-700"
+  }
+}
+
+function getMcpStatusClassName(status: McpActionStatus | string) {
+  return status === "success"
+    ? "border-emerald-200 bg-emerald-100 text-emerald-700"
+    : "border-red-200 bg-red-100 text-red-700"
+}
+
+function McpActionLogsSection({
+  actions,
+  isLoading,
+  error,
+}: {
+  actions: McpActionLog[]
+  isLoading: boolean
+  error: Error | null
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Activity className="h-4 w-4 text-primary" aria-hidden="true" />
+        <h3 className="font-semibold">MCP 액션</h3>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full" />
+          ))}
+        </div>
+      ) : error ? (
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+          MCP 액션 로그를 불러오지 못했습니다. {error.message}
+        </p>
+      ) : actions.length === 0 ? (
+        <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+          실행된 MCP 액션이 없습니다.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {actions.map((action) => {
+            const actionLabel = action.action_detail ?? action.action_type
+
+            return (
+            <div
+              key={action.id}
+              className="rounded-lg border bg-background p-3 text-sm"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "font-normal",
+                    getMcpActionTypeClassName(actionLabel),
+                  )}
+                >
+                  {actionLabel}
+                </Badge>
+                <Badge
+                  className={cn(
+                    "border font-normal",
+                    getMcpStatusClassName(action.status),
+                  )}
+                >
+                  {action.status}
+                </Badge>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {formatDateTime(action.executed_at)}
+                </span>
+              </div>
+
+              <p className="mt-2 text-muted-foreground">
+                {action.action_detail ?? "액션 상세 정보가 없습니다."}
+              </p>
+
+              {action.error_message ? (
+                <p className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-800">
+                  {action.error_message}
+                </p>
+              ) : null}
+
+              <div className="mt-3 space-y-2">
+                <details className="rounded-md border bg-muted/30 px-3 py-2">
+                  <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                    request_payload
+                  </summary>
+                  <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                    {formatJsonPayload(action.request_payload)}
+                  </pre>
+                </details>
+                <details className="rounded-md border bg-muted/30 px-3 py-2">
+                  <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                    response_payload
+                  </summary>
+                  <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                    {formatJsonPayload(action.response_payload)}
+                  </pre>
+                </details>
+              </div>
+            </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function CallsPage() {
   const [selectedCallId, setSelectedCallId] = useState<string | null>(null)
   const callsQuery = useCalls(DEFAULT_QUERY)
   const callDetailQuery = useCallDetail(selectedCallId)
   const transcriptsQuery = useCallTranscripts(selectedCallId)
+  const mcpActionsQuery = useCallMcpActions(selectedCallId)
   const summaryQuery = useCallSummary(selectedCallId)
 
   const calls = callsQuery.data?.items ?? []
   const selectedCall =
     callDetailQuery.data ?? calls.find((call) => call.id === selectedCallId) ?? null
   const transcripts = transcriptsQuery.data?.items ?? []
+  const mcpActions = mcpActionsQuery.data?.items ?? []
   const summary = summaryQuery.data
 
   return (
@@ -268,6 +399,12 @@ export function CallsPage() {
                   </p>
                 )}
               </div>
+
+              <McpActionLogsSection
+                actions={mcpActions}
+                isLoading={mcpActionsQuery.isLoading}
+                error={mcpActionsQuery.error}
+              />
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">

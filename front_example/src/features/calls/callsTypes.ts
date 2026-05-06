@@ -67,6 +67,26 @@ export type BackendSummary = {
   updated_at: string
 }
 
+export type McpActionStatus = "success" | "fail"
+
+export interface McpActionLog {
+  id: string
+  call_id: string
+  tenant_id?: string
+  action_type: string
+  action_detail: string | null
+  status: McpActionStatus
+  request_payload: Record<string, unknown>
+  response_payload: Record<string, unknown>
+  error_message: string | null
+  executed_at: string
+}
+
+export interface McpActionLogsResponse {
+  items: McpActionLog[]
+  total: number
+}
+
 export type CallListQuery = {
   status?: CallStatus | "all"
   startedFrom?: string

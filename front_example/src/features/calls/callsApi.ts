@@ -6,6 +6,7 @@ import type {
   BackendSummary,
   CallListData,
   CallListQuery,
+  McpActionLogsResponse,
   TranscriptListData,
 } from "@/features/calls/callsTypes"
 
@@ -36,6 +37,18 @@ function buildCallsSearchParams(query: CallListQuery = {}) {
   return queryString ? `?${queryString}` : ""
 }
 
+function unwrapApiResponse<T>(response: ApiResponse<T> | T) {
+  if (
+    typeof response === "object" &&
+    response !== null &&
+    "data" in response
+  ) {
+    return (response as ApiResponse<T>).data
+  }
+
+  return response as T
+}
+
 export async function getCalls(query?: CallListQuery) {
   const response = await apiFetch<ApiResponse<CallListData>>(
     `${endpoints.callList}${buildCallsSearchParams(query)}`,
@@ -58,6 +71,16 @@ export async function getCallTranscripts(callId: string) {
   )
 
   return response.data
+}
+
+export async function getCallMcpActions(callId: string) {
+  const response = await apiFetch<
+    ApiResponse<McpActionLogsResponse> | McpActionLogsResponse
+  >(
+    endpoints.callActions(callId),
+  )
+
+  return unwrapApiResponse(response)
 }
 
 export async function getCallSummary(callId: string) {

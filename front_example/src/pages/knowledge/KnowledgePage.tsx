@@ -10,12 +10,22 @@ import {
   FileText,
   FileUp,
   Loader2,
+  Pencil,
+  RefreshCw,
   Trash2,
   Upload,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
@@ -25,12 +35,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
 import {
   useDeleteTenantDocument,
+  useReindexTenantDocument,
+  useTenantDocument,
+  useTenantDocumentChunks,
   useTenantDocuments,
+  useUpdateTenantDocumentChunk,
   useUploadTenantDocument,
 } from "@/features/documents/documentQueries"
-import type { TenantDocument } from "@/features/documents/documentTypes"
+import type {
+  RagDocumentChunk,
+  TenantDocument,
+} from "@/features/documents/documentTypes"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/shared/auth/authStore"
 
@@ -100,21 +118,52 @@ function DocumentTableSkeleton() {
   )
 }
 
+function formatJsonPayload(payload: Record<string, unknown>) {
+  return JSON.stringify(payload ?? {}, null, 2)
+}
+
+function getChunkPreview(content: string) {
+  if (content.length <= 180) {
+    return content
+  }
+
+  return `${content.slice(0, 180)}...`
+}
+
 export function KnowledgePage() {
   const tenantId = useAuthStore((state) => state.tenant?.id)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null)
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null)
+  const [editingChunk, setEditingChunk] = useState<RagDocumentChunk | null>(null)
+  const [draftContent, setDraftContent] = useState("")
+  const [chunkFeedback, setChunkFeedback] = useState<string | null>(null)
+  const [chunkError, setChunkError] = useState<string | null>(null)
+  const [reindexFeedback, setReindexFeedback] = useState<string | null>(null)
+  const [reindexError, setReindexError] = useState<string | null>(null)
 
   const documentsQuery = useTenantDocuments(tenantId, documentQueryParams)
+  const documentDetailQuery = useTenantDocument(tenantId, selectedDocumentId)
+  const chunksQuery = useTenantDocumentChunks(tenantId, selectedDocumentId)
   const { mutateAsync: uploadDocument, isPending: isUploading } =
     useUploadTenantDocument(tenantId)
   const { mutateAsync: deleteDocument } = useDeleteTenantDocument(tenantId)
+  const { mutateAsync: updateChunk, isPending: isUpdatingChunk } =
+    useUpdateTenantDocumentChunk(tenantId, selectedDocumentId)
+  const { mutateAsync: reindexDocument, isPending: isReindexing } =
+    useReindexTenantDocument(tenantId, selectedDocumentId)
 
   const documents = documentsQuery.data?.items ?? []
+  const selectedDocument =
+    documentDetailQuery.data ??
+    documents.find((document) => document.id === selectedDocumentId) ??
+    null
+  const chunks = chunksQuery.data?.items ?? []
   const totalDocuments = documentsQuery.data?.total ?? documents.length
   const isUploadDisabled = !tenantId || isUploading
+  const isSelectedDocumentProcessing = selectedDocument?.status === "processing"
 
   const uploadPdfFiles = useCallback(
     async (files: File[]) => {
@@ -196,6 +245,9 @@ export function KnowledgePage() {
 
       try {
         await deleteDocument(documentId)
+        if (selectedDocumentId === documentId) {
+          setSelectedDocumentId(null)
+        }
       } catch (error) {
         setDeleteError(
           error instanceof Error ? error.message : "문서를 삭제하지 못했습니다.",
@@ -204,8 +256,101 @@ export function KnowledgePage() {
         setDeletingDocumentId(null)
       }
     },
-    [deleteDocument, tenantId],
+    [deleteDocument, selectedDocumentId, tenantId],
   )
+
+  const handleSelectDocument = useCallback((document: TenantDocument) => {
+    if (document.status === "processing") {
+      return
+    }
+
+    setSelectedDocumentId(document.id)
+    setChunkFeedback(null)
+    setChunkError(null)
+    setReindexFeedback(null)
+    setReindexError(null)
+  }, [])
+
+  const openChunkEditor = useCallback((chunk: RagDocumentChunk) => {
+    setEditingChunk(chunk)
+    setDraftContent(chunk.content)
+    setChunkFeedback(null)
+    setChunkError(null)
+  }, [])
+
+  const closeChunkEditor = useCallback(() => {
+    if (isUpdatingChunk) {
+      return
+    }
+
+    setEditingChunk(null)
+    setDraftContent("")
+  }, [isUpdatingChunk])
+
+  const handleSaveChunk = useCallback(async () => {
+    if (!editingChunk) {
+      return
+    }
+
+    const nextContent = draftContent.trim()
+
+    if (!nextContent) {
+      setChunkError("청크 내용은 비워둘 수 없습니다.")
+      return
+    }
+
+    if (draftContent === editingChunk.content) {
+      setChunkError("변경된 내용이 없습니다.")
+      return
+    }
+
+    setChunkError(null)
+    setChunkFeedback(null)
+
+    try {
+      await updateChunk({
+        chunkId: editingChunk.id,
+        payload: {
+          content: draftContent,
+          metadata: editingChunk.metadata,
+        },
+      })
+      setChunkFeedback("청크 내용이 저장되었습니다. 재인덱싱을 실행해 검색 인덱스에 반영하세요.")
+      setEditingChunk(null)
+      setDraftContent("")
+    } catch (error) {
+      setChunkError(
+        error instanceof Error ? error.message : "청크 내용을 저장하지 못했습니다.",
+      )
+    }
+  }, [draftContent, editingChunk, updateChunk])
+
+  const handleReindex = useCallback(async () => {
+    if (!selectedDocumentId) {
+      return
+    }
+
+    setReindexError(null)
+    setReindexFeedback(null)
+
+    try {
+      await reindexDocument()
+      setReindexFeedback("재인덱싱 요청이 완료되었습니다. 처리 상태는 자동으로 갱신됩니다.")
+    } catch (error) {
+      setReindexError(
+        error instanceof Error ? error.message : "재인덱싱 요청에 실패했습니다.",
+      )
+    }
+  }, [reindexDocument, selectedDocumentId])
+
+  const canSaveChunk =
+    Boolean(editingChunk) &&
+    draftContent.trim().length > 0 &&
+    draftContent !== editingChunk?.content &&
+    !isUpdatingChunk
+
+  const canReindex =
+    Boolean(selectedDocumentId) && !isSelectedDocumentProcessing && !isReindexing
 
   return (
     <div className="space-y-6 p-6">
@@ -336,7 +481,7 @@ export function KnowledgePage() {
                   <TableHead className="font-semibold">업로드 일시</TableHead>
                   <TableHead className="font-semibold">인덱싱 일시</TableHead>
                   <TableHead className="font-semibold">상태</TableHead>
-                  <TableHead className="w-[80px] font-semibold">작업</TableHead>
+                  <TableHead className="w-[140px] font-semibold">작업</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -384,7 +529,9 @@ export function KnowledgePage() {
                       key={document.id}
                       document={document}
                       index={idx}
+                      isSelected={selectedDocumentId === document.id}
                       isDeleting={deletingDocumentId === document.id}
+                      onSelect={() => handleSelectDocument(document)}
                       onDelete={() => void handleDelete(document.id)}
                     />
                   ))}
@@ -394,6 +541,226 @@ export function KnowledgePage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Card className="transition-all duration-300 hover:shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="h-5 w-5 text-primary" />
+              검색용 문서 내용 수정
+            </CardTitle>
+            {selectedDocument ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canReindex}
+                onClick={() => void handleReindex()}
+                className="gap-2"
+              >
+                {isReindexing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                재인덱싱
+              </Button>
+            ) : null}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!selectedDocumentId ? (
+              <p className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                문서를 선택하면 RAG 청크 내용을 확인하고 수정할 수 있습니다.
+              </p>
+            ) : null}
+
+            {selectedDocumentId && documentDetailQuery.isError ? (
+              <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                문서 상세 정보를 불러오지 못했습니다. {documentDetailQuery.error.message}
+              </p>
+            ) : null}
+
+            {selectedDocument ? (
+              <div className="grid gap-3 rounded-lg border bg-muted/30 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">파일명</p>
+                  <p className="mt-1 font-medium text-foreground">{selectedDocument.file_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">청크 수</p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {selectedDocument.chunk_count?.toLocaleString("ko-KR") ?? "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">상태</p>
+                  <Badge
+                    className={cn(
+                      "mt-1 gap-1 border font-normal",
+                      getStatusConfig(selectedDocument.status).color,
+                    )}
+                  >
+                    {getStatusConfig(selectedDocument.status).icon}
+                    {getStatusConfig(selectedDocument.status).label}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">인덱싱 일시</p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {formatDateTime(selectedDocument.indexed_at)}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {isSelectedDocumentProcessing ? (
+              <p className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                문서를 처리 중입니다. 완료되면 자동으로 갱신됩니다.
+              </p>
+            ) : null}
+
+            {chunkFeedback ? (
+              <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                {chunkFeedback}
+              </p>
+            ) : null}
+
+            {chunkError ? (
+              <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                {chunkError}
+              </p>
+            ) : null}
+
+            {reindexFeedback ? (
+              <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                {reindexFeedback}
+              </p>
+            ) : null}
+
+            {reindexError ? (
+              <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                {reindexError}
+              </p>
+            ) : null}
+
+            {selectedDocumentId && chunksQuery.isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="h-28 w-full" />
+                ))}
+              </div>
+            ) : null}
+
+            {selectedDocumentId && chunksQuery.isError ? (
+              <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                청크 목록을 불러오지 못했습니다. {chunksQuery.error.message}
+              </p>
+            ) : null}
+
+            {selectedDocumentId &&
+            !chunksQuery.isLoading &&
+            !chunksQuery.isError &&
+            chunks.length === 0 ? (
+              <p className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                표시할 청크가 없습니다.
+              </p>
+            ) : null}
+
+            {chunks.length > 0 ? (
+              <div className="space-y-3">
+                {chunks.map((chunk) => (
+                  <div
+                    key={chunk.id}
+                    className="rounded-lg border bg-background p-4 transition-colors hover:bg-muted/30"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">#{chunk.chunk_index}</Badge>
+                      <Badge variant="outline">
+                        page {chunk.page_number ?? "-"}
+                      </Badge>
+                      {chunk.embedding_status ? (
+                        <Badge
+                          className={cn(
+                            "border font-normal",
+                            getStatusConfig(chunk.embedding_status).color,
+                          )}
+                        >
+                          {chunk.embedding_status}
+                        </Badge>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isSelectedDocumentProcessing}
+                        onClick={() => openChunkEditor(chunk)}
+                        className="ml-auto gap-2"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        수정
+                      </Button>
+                    </div>
+                    <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">
+                      {getChunkPreview(chunk.content)}
+                    </p>
+                    <details className="mt-3 rounded-md border bg-muted/30 px-3 py-2">
+                      <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                        metadata
+                      </summary>
+                      <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
+                        {formatJsonPayload(chunk.metadata)}
+                      </pre>
+                    </details>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <Dialog open={Boolean(editingChunk)} onOpenChange={(open) => !open && closeChunkEditor()}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>RAG 청크 내용 수정</DialogTitle>
+            <DialogDescription>
+              PDF 원본 파일이 아니라 검색에 사용하는 청크 내용을 수정합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={draftContent}
+            onChange={(event) => setDraftContent(event.target.value)}
+            className="min-h-72"
+            disabled={isUpdatingChunk}
+          />
+          {chunkError ? (
+            <p className="text-sm text-red-600">{chunkError}</p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isUpdatingChunk}
+              onClick={closeChunkEditor}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              disabled={!canSaveChunk}
+              onClick={() => void handleSaveChunk()}
+              className="gap-2"
+            >
+              {isUpdatingChunk ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -401,15 +768,20 @@ export function KnowledgePage() {
 function DocumentRow({
   document,
   index,
+  isSelected,
   isDeleting,
+  onSelect,
   onDelete,
 }: {
   document: TenantDocument
   index: number
+  isSelected: boolean
   isDeleting: boolean
+  onSelect: () => void
   onDelete: () => void
 }) {
   const status = getStatusConfig(document.status)
+  const isProcessing = document.status === "processing"
 
   return (
     <motion.tr
@@ -417,7 +789,10 @@ function DocumentRow({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
       transition={{ delay: 0.03 * index, duration: 0.3 }}
-      className="group transition-colors hover:bg-muted/50"
+      className={cn(
+        "group transition-colors hover:bg-muted/50",
+        isSelected && "bg-primary/5",
+      )}
     >
       <TableCell>
         <div className="flex items-center gap-2">
@@ -441,20 +816,32 @@ function DocumentRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={isDeleting}
-          onClick={onDelete}
-          aria-label={`${document.file_name} 삭제`}
-          className="h-8 w-8 text-muted-foreground opacity-0 transition-opacity hover:text-red-500 disabled:opacity-60 group-hover:opacity-100"
-        >
-          {isDeleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-        </Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isProcessing}
+            onClick={onSelect}
+            aria-label={`${document.file_name} 청크 보기`}
+            className="h-8 w-8 text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isDeleting}
+            onClick={onDelete}
+            aria-label={`${document.file_name} 삭제`}
+            className="h-8 w-8 text-muted-foreground opacity-0 transition-opacity hover:text-red-500 disabled:opacity-60 group-hover:opacity-100"
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </TableCell>
     </motion.tr>
   )

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import {
   getCallDetail,
+  getCallMcpActions,
   getCallSummary,
   getCallTranscripts,
   getCalls,
@@ -26,6 +27,14 @@ export function useCallTranscripts(callId: string | null) {
   return useQuery({
     queryKey: ["calls", "transcripts", callId],
     queryFn: () => getCallTranscripts(callId!),
+    enabled: Boolean(callId),
+  })
+}
+
+export function useCallMcpActions(callId: string | null) {
+  return useQuery({
+    queryKey: ["calls", "mcp-actions", callId],
+    queryFn: () => getCallMcpActions(callId!),
     enabled: Boolean(callId),
   })
 }
