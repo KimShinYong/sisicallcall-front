@@ -1,13 +1,14 @@
 import type { PropsWithChildren } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "@/components/ui/sonner"
+import { AuthBootstrap } from "@/shared/auth/AuthBootstrap"
 
 const queryClient = new QueryClient()
 
 export function Providers({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthBootstrap>{children}</AuthBootstrap>
       <Toaster />
     </QueryClientProvider>
   )

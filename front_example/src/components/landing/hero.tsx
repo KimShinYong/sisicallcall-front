@@ -69,7 +69,6 @@ export function Hero() {
             className="relative flex items-center justify-center lg:justify-end"
           >
             <motion.div
-              whileHover={{ scale: 1.02, y: -5 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="relative h-[400px] w-full max-w-[500px] overflow-hidden rounded-[32px] sm:h-[450px] lg:h-[500px]"
               style={{
@@ -89,6 +88,7 @@ export function Hero() {
                   <User
                     className="h-16 w-16 text-[#4a3a6a] sm:h-20 sm:w-20 lg:h-24 lg:w-24"
                     strokeWidth={1.5}
+                    aria-hidden="true"
                   />
                 </motion.div>
               </div>

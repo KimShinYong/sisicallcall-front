@@ -200,12 +200,13 @@ export function Header() {
           </motion.div>
 
           <IconButton
-            label={isMobileMenuOpen ? "상단 메뉴 닫기" : "상단 메뉴 열기"}
+            label={isMobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
             onClick={() => {
               setIsMobileMenuOpen((open) => !open)
               setExpandedMobileMenus([])
             }}
             className="rounded-full border-transparent bg-transparent text-[#0f172a] shadow-none hover:bg-[#f1f5f9] lg:hidden"
+            aria-label={isMobileMenuOpen ? "상단 메뉴 닫기" : "상단 메뉴 열기"}
             aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

@@ -1,31 +1,24 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react"
+import * as React from 'react'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
-type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string
-  children: ReactNode
 }
 
 function IconButton({
   label,
   className,
   children,
-  type = "button",
-  "aria-label": ariaLabel,
+  type = 'button',
   ...props
 }: IconButtonProps) {
   return (
     <button
       type={type}
-      aria-label={ariaLabel ?? label}
-      data-slot="icon-button"
+      aria-label={label}
       className={cn(
-        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-background text-foreground shadow-sm",
-        "transition-all hover:bg-accent hover:text-accent-foreground active:scale-95",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0",
+        'inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-background shadow-sm transition-all outline-none hover:bg-accent hover:text-accent-foreground active:scale-95 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
       {...props}

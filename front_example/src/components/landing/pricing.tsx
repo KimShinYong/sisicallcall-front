@@ -104,15 +104,12 @@ export function Pricing() {
         >
           {plans.map((plan, idx) => (
             <motion.div key={plan.name} variants={cardVariants}>
-              <motion.div
-                whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                className="h-full"
-              >
+              <motion.div className="h-full">
                 <Card
-                  className={`relative flex h-full flex-col transition-all duration-300 hover:shadow-xl ${
+                  className={`relative flex h-full flex-col transition-all duration-300 ${
                     plan.highlighted
                       ? "border-2 border-primary shadow-xl shadow-primary/10"
-                      : "border-border hover:border-primary/30"
+                      : "border-border"
                   }`}
                 >
                   {plan.highlighted && (

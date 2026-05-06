@@ -1,16 +1,20 @@
 export const endpoints = {
+  auth: {
+    login: "/auth/login",
+    me: "/auth/me",
+  },
+
   dashboardOverview: "/dashboard/overview",
   escalationAlerts: "/dashboard/escalation-alerts",
+  dashboardStats: "/dashboard/stats",
+  dashboardPriorityQueue: "/dashboard/priority-queue",
+  dashboardEmotionDistribution: "/dashboard/emotion-distribution",
 
-  calls: "/calls",
-  callDetail: (callId: string) => `/calls/${callId}`,
-  callTranscripts: (callId: string) => `/calls/${callId}/transcripts`,
+  callList: "/call",
+  callDetail: (callId: string) => `/call/${callId}`,
+  callTranscripts: (callId: string) => `/call/${callId}/transcripts`,
 
-  summary: (callId: string) => `/summaries/${callId}`,
-  summarySync: (callId: string) => `/summaries/${callId}/sync`,
-
-  voc: (callId: string) => `/voc/${callId}`,
-  vocClusters: "/voc/clusters",
+  callSummary: (callId: string) => `/summary/${callId}`,
 
   tenants: "/tenants",
   tenantDocuments: (tenantId: string) => `/tenants/${tenantId}/documents`,
