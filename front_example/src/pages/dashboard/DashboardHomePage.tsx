@@ -10,13 +10,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatedSection } from "@/components/ui/animated-section"
 import {
+  useDashboardEmotionDistribution,
+  useDashboardIntentDistribution,
   useDashboardPriorityQueue,
+  useDashboardRecentCalls,
   useDashboardStats,
 } from "@/features/dashboard/dashboardQueries"
 import type {
   DashboardAlert,
+  EmotionDistribution,
   DashboardOverview,
 } from "@/features/dashboard/dashboardTypes"
+
+const recentCallsQueryParams = {
+  limit: 10,
+  offset: 0,
+} as const
+
+const intentDistributionQueryParams = {
+  limit: 5,
+} as const
 
 const emptyStats: DashboardOverview = {
   totalCalls: 0,
@@ -27,6 +40,13 @@ const emptyStats: DashboardOverview = {
   mcpSuccessCount: 0,
   mcpFailedCount: 0,
   partialSuccessCount: 0,
+}
+
+const emptyEmotionDistribution: EmotionDistribution = {
+  positive: 0,
+  neutral: 0,
+  negative: 0,
+  angry: 0,
 }
 
 function formatPercent(value: number) {
@@ -191,9 +211,18 @@ export function DashboardHomePage() {
   const [showAlert, setShowAlert] = useState(true)
   const statsQuery = useDashboardStats()
   const priorityQueueQuery = useDashboardPriorityQueue()
+  const recentCallsQuery = useDashboardRecentCalls(recentCallsQueryParams)
+  const intentDistributionQuery = useDashboardIntentDistribution(
+    intentDistributionQueryParams,
+  )
+  const emotionDistributionQuery = useDashboardEmotionDistribution()
 
   const stats = statsQuery.data ?? emptyStats
   const alerts = priorityQueueQuery.data ?? []
+  const recentCalls = recentCallsQuery.data?.items ?? []
+  const intentDistribution = intentDistributionQuery.data ?? []
+  const emotionDistribution =
+    emotionDistributionQuery.data ?? emptyEmotionDistribution
   const visibleAlertCount = alerts.length
 
   return (
@@ -236,11 +265,23 @@ export function DashboardHomePage() {
       />
 
       <div className="grid gap-6 md:grid-cols-2">
-        <SentimentChart />
-        <IntentChart />
+        <SentimentChart
+          data={emotionDistribution}
+          isLoading={emotionDistributionQuery.isLoading}
+          error={emotionDistributionQuery.error}
+        />
+        <IntentChart
+          data={intentDistribution}
+          isLoading={intentDistributionQuery.isLoading}
+          error={intentDistributionQuery.error}
+        />
       </div>
 
-      <CallList />
+      <CallList
+        calls={recentCalls}
+        isLoading={recentCallsQuery.isLoading}
+        error={recentCallsQuery.error}
+      />
 
       <PdfUpload />
     </div>

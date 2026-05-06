@@ -8,6 +8,8 @@ export const endpoints = {
   escalationAlerts: "/dashboard/escalation-alerts",
   dashboardStats: "/dashboard/stats",
   dashboardPriorityQueue: "/dashboard/priority-queue",
+  dashboardRecentCalls: "/dashboard/recent-calls",
+  dashboardIntentDistribution: "/dashboard/intent-distribution",
   dashboardEmotionDistribution: "/dashboard/emotion-distribution",
 
   callList: "/call",
@@ -17,5 +19,7 @@ export const endpoints = {
   callSummary: (callId: string) => `/summary/${callId}`,
 
   tenants: "/tenants",
-  tenantDocuments: (tenantId: string) => `/tenants/${tenantId}/documents`,
+  tenantDocuments: (tenantId: string) => `/tenant/${tenantId}/documents`,
+  tenantDocumentDetail: (tenantId: string, documentId: string) =>
+    `/tenant/${tenantId}/documents/${documentId}`,
 } as const

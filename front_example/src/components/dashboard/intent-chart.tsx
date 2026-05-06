@@ -1,16 +1,27 @@
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MotionCard } from "@/components/ui/motion-card"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { IntentDistributionItem } from "@/features/dashboard/dashboardTypes"
 
-const data = [
-  { name: "결제 문의", value: 128 },
-  { name: "배송 조회", value: 95 },
-  { name: "환불 요청", value: 72 },
-  { name: "제품 문의", value: 65 },
-  { name: "기타", value: 40 },
-]
+function buildChartData(data: IntentDistributionItem[]) {
+  return data.map((item) => ({
+    name: item.label,
+    value: item.count,
+  }))
+}
 
-export function IntentChart() {
+export function IntentChart({
+  data,
+  isLoading,
+  error,
+}: {
+  data: IntentDistributionItem[]
+  isLoading: boolean
+  error: Error | null
+}) {
+  const chartData = buildChartData(data)
+
   return (
     <MotionCard
       className="h-full bg-card p-0 py-6 text-card-foreground"
@@ -20,9 +31,22 @@ export function IntentChart() {
           <CardTitle className="text-base font-semibold">주요 문의 의도</CardTitle>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="h-[240px]">
+              <Skeleton className="h-full w-full rounded-lg" />
+            </div>
+          ) : error ? (
+            <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+              문의 의도 분포를 불러오지 못했습니다.
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+              집계된 문의 의도가 없습니다.
+            </div>
+          ) : (
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
+              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <XAxis type="number" hide />
                 <YAxis
                   type="category"
@@ -48,7 +72,7 @@ export function IntentChart() {
                   animationBegin={300}
                   animationDuration={800}
                 >
-                  {data.map((entry, index) => (
+                  {chartData.map((entry, index) => (
                     <Cell
                       key={`cell-${entry.name}`}
                       fill={index === 0 ? "#14b8a6" : "#99f6e4"}
@@ -58,6 +82,7 @@ export function IntentChart() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          )}
         </CardContent>
     </MotionCard>
   )

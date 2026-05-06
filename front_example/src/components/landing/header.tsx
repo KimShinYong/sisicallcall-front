@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
+import { useDashboardEntryActions } from "@/components/landing/dashboard-entry-choice"
 import { cn } from "@/lib/utils"
 
 const logoSrc =
@@ -57,6 +58,7 @@ export function Header() {
   const [expandedMobileMenus, setExpandedMobileMenus] = useState<string[]>([])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const { openInBrowser, openAsApp } = useDashboardEntryActions()
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -74,6 +76,16 @@ export function Header() {
         ? current.filter((item) => item !== label)
         : [...current, label],
     )
+  }
+
+  const handleWebDashboardEntry = () => {
+    closeMobileMenu()
+    openInBrowser()
+  }
+
+  const handleAppDashboardEntry = () => {
+    closeMobileMenu()
+    void openAsApp()
   }
 
   const floatingHeader = isScrolled || isMobileMenuOpen
@@ -176,16 +188,17 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
-          <Link
-            to="/dashboard"
-            onClick={closeMobileMenu}
+          <button
+            type="button"
+            onClick={handleWebDashboardEntry}
             className="hidden text-[15px] font-medium text-[#0f172a] transition-colors hover:text-[#475569] sm:block"
           >
-            대시보드
-          </Link>
+            웹에서 보기
+          </button>
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Button
-              asChild
+              type="button"
+              onClick={handleAppDashboardEntry}
               className={cn(
                 "h-10 rounded-full px-4 text-[14px] font-semibold text-white shadow-none transition-all duration-300 sm:px-6",
                 isMobileMenuOpen
@@ -193,9 +206,7 @@ export function Header() {
                   : "bg-[#0D9488] hover:bg-[#0f766e] hover:shadow-lg hover:shadow-[#0D9488]/25",
               )}
             >
-              <Link to="/dashboard" onClick={closeMobileMenu}>
-                시작하기
-              </Link>
+              앱으로 보기
             </Button>
           </motion.div>
 
@@ -330,13 +341,20 @@ export function Header() {
               })}
 
               <div className="mt-6 grid gap-3 sm:hidden">
-                <Link
-                  to="/dashboard"
-                  onClick={closeMobileMenu}
+                <button
+                  type="button"
+                  onClick={handleWebDashboardEntry}
                   className="rounded-full border border-[#e2e8f0] px-5 py-3 text-center text-[15px] font-semibold text-[#0f172a]"
                 >
-                  대시보드
-                </Link>
+                  웹에서 보기
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAppDashboardEntry}
+                  className="rounded-full bg-[#0D9488] px-5 py-3 text-center text-[15px] font-semibold text-white"
+                >
+                  앱으로 보기
+                </button>
               </div>
             </motion.nav>
           </motion.div>

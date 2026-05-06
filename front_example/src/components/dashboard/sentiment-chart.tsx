@@ -1,25 +1,54 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MotionCard } from "@/components/ui/motion-card"
+import { Skeleton } from "@/components/ui/skeleton"
+import type { EmotionDistribution } from "@/features/dashboard/dashboardTypes"
 
-const data = [
-  { name: "긍정", value: 45, color: "#14b8a6" },
-  { name: "중립", value: 35, color: "#94a3b8" },
-  { name: "부정", value: 20, color: "#f87171" },
-]
+function buildChartData(data: EmotionDistribution) {
+  return [
+    { name: "긍정", value: data.positive, color: "#14b8a6" },
+    { name: "중립", value: data.neutral, color: "#94a3b8" },
+    { name: "부정", value: data.negative, color: "#f87171" },
+    { name: "분노", value: data.angry, color: "#ef4444" },
+  ]
+}
 
-export function SentimentChart() {
+export function SentimentChart({
+  data,
+  isLoading,
+  error,
+}: {
+  data: EmotionDistribution
+  isLoading: boolean
+  error: Error | null
+}) {
+  const chartData = buildChartData(data)
+  const isEmpty = chartData.every((item) => item.value === 0)
+
   return (
     <MotionCard className="h-full bg-card p-0 py-6 text-card-foreground">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold">고객 감정 분포</CardTitle>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="h-[240px]">
+              <Skeleton className="h-full w-full rounded-lg" />
+            </div>
+          ) : error ? (
+            <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+              고객 감정 분포를 불러오지 못했습니다.
+            </div>
+          ) : isEmpty ? (
+            <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+              집계된 고객 감정이 없습니다.
+            </div>
+          ) : (
           <div className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={chartData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -31,7 +60,7 @@ export function SentimentChart() {
                   animationBegin={200}
                   animationDuration={800}
                 >
-                  {data.map((entry, index) => (
+                  {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -52,6 +81,7 @@ export function SentimentChart() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+          )}
         </CardContent>
     </MotionCard>
   )

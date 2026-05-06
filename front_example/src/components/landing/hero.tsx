@@ -1,7 +1,6 @@
-import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import { User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { DashboardEntryActions } from "@/components/landing/dashboard-entry-choice"
 
 const logoSrc =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-F73u93gxOEnKoM0ShWO9oUBWEHDlnw.png"
@@ -49,16 +48,14 @@ export function Hero() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-10"
             >
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Button
-                  asChild
-                  size="lg"
-                  className="mt-10 h-12 rounded-full bg-[#0D9488] px-8 text-[15px] font-semibold text-white shadow-none transition-all duration-300 hover:bg-[#0f766e] hover:shadow-lg hover:shadow-[#0D9488]/25"
-                >
-                  <Link to="/dashboard">시작하기</Link>
-                </Button>
-              </motion.div>
+              <DashboardEntryActions
+                size="lg"
+                className="items-stretch sm:items-center"
+                primaryClassName="h-12 px-8 text-[15px] font-semibold shadow-none transition-all duration-300 hover:shadow-lg hover:shadow-[#0D9488]/25"
+                secondaryClassName="h-12 px-8 text-[15px] font-semibold"
+              />
             </motion.div>
           </motion.div>
 

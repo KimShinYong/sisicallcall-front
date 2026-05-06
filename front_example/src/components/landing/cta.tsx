@@ -1,6 +1,6 @@
 import { useRef } from "react"
 import { motion, useInView } from "framer-motion"
-import { ArrowRight } from "lucide-react"
+import { DashboardEntryActions } from "@/components/landing/dashboard-entry-choice"
 import { Button } from "@/components/ui/button"
 
 export function CTA() {
@@ -40,21 +40,12 @@ export function CTA() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
             >
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Button
-                  size="lg"
-                  className="bg-primary px-8 font-semibold text-primary-foreground shadow-lg transition-all duration-300 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30"
-                >
-                  무료 체험 시작하기
-                  <motion.span
-                    initial={{ x: 0 }}
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </motion.span>
-                </Button>
-              </motion.div>
+              <DashboardEntryActions
+                size="lg"
+                className="items-stretch sm:items-center"
+                primaryClassName="px-8 font-semibold shadow-lg hover:shadow-xl hover:shadow-primary/30"
+                secondaryClassName="border-background/30 bg-transparent px-8 font-semibold text-background hover:border-background/50 hover:bg-background/10 hover:text-background"
+              />
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Button
                   variant="outline"
