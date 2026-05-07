@@ -152,7 +152,7 @@ export function KnowledgePage() {
   const { mutateAsync: deleteDocument } = useDeleteTenantDocument(tenantId)
   const { mutateAsync: updateChunk, isPending: isUpdatingChunk } =
     useUpdateTenantDocumentChunk(tenantId, selectedDocumentId)
-  const { mutateAsync: reindexDocument, isPending: isReindexing } =
+  const { mutateAsync: reindexDocument, isPending: isReindexingDocument } =
     useReindexTenantDocument(tenantId, selectedDocumentId)
 
   const documents = documentsQuery.data?.items ?? []
@@ -279,19 +279,37 @@ export function KnowledgePage() {
   }, [])
 
   const closeChunkEditor = useCallback(() => {
-    if (isUpdatingChunk) {
+    if (isUpdatingChunk || isReindexingDocument) {
       return
     }
 
     setEditingChunk(null)
     setDraftContent("")
-  }, [isUpdatingChunk])
+  }, [isReindexingDocument, isUpdatingChunk])
 
   const handleSaveChunk = useCallback(async () => {
     if (!editingChunk) {
+      setChunkError("수정할 청크 정보를 확인할 수 없습니다.")
       return
     }
 
+    if (!tenantId) {
+      setChunkError("회사 정보를 확인할 수 없습니다.")
+      return
+    }
+
+    if (!selectedDocumentId) {
+      setChunkError("문서 정보를 확인할 수 없습니다.")
+      return
+    }
+
+    if (!editingChunk.id) {
+      setChunkError("청크 정보를 확인할 수 없습니다.")
+      return
+    }
+
+    const chunkId = editingChunk.id
+    const documentId = selectedDocumentId
     const nextContent = draftContent.trim()
 
     if (!nextContent) {
@@ -306,27 +324,76 @@ export function KnowledgePage() {
 
     setChunkError(null)
     setChunkFeedback(null)
+    setReindexError(null)
+    setReindexFeedback(null)
 
     try {
       await updateChunk({
-        chunkId: editingChunk.id,
+        chunkId,
         payload: {
-          content: draftContent,
-          metadata: editingChunk.metadata,
+          content: nextContent,
+          metadata: editingChunk.metadata ?? {},
         },
       })
-      setChunkFeedback("청크 내용이 저장되었습니다. 재인덱싱을 실행해 검색 인덱스에 반영하세요.")
+
+      if (import.meta.env.DEV) {
+        console.debug("[KnowledgePage] chunk updated, start reindex", {
+          tenantId,
+          documentId,
+          chunkId,
+        })
+      }
+    } catch {
+      setChunkError("청크 수정에 실패했습니다.")
+      return
+    }
+
+    try {
+      await reindexDocument()
+
+      if (import.meta.env.DEV) {
+        console.debug("[KnowledgePage] chunk reindex succeeded", {
+          tenantId,
+          documentId,
+          chunkId,
+        })
+      }
+
+      setChunkFeedback("청크 내용이 저장되고 재인덱싱이 완료되었습니다.")
+      setChunkError(null)
       setEditingChunk(null)
       setDraftContent("")
     } catch (error) {
+      if (import.meta.env.DEV) {
+        console.debug("[KnowledgePage] chunk reindex failed", {
+          tenantId,
+          documentId,
+          chunkId,
+          error,
+        })
+      }
+
       setChunkError(
-        error instanceof Error ? error.message : "청크 내용을 저장하지 못했습니다.",
+        "청크는 수정됐지만 재인덱싱에 실패했습니다. 다시 재인덱싱을 시도해 주세요.",
       )
     }
-  }, [draftContent, editingChunk, updateChunk])
+  }, [
+    draftContent,
+    editingChunk,
+    reindexDocument,
+    selectedDocumentId,
+    tenantId,
+    updateChunk,
+  ])
 
   const handleReindex = useCallback(async () => {
+    if (!tenantId) {
+      setReindexError("회사 정보를 확인할 수 없습니다.")
+      return
+    }
+
     if (!selectedDocumentId) {
+      setReindexError("문서 정보를 확인할 수 없습니다.")
       return
     }
 
@@ -341,16 +408,16 @@ export function KnowledgePage() {
         error instanceof Error ? error.message : "재인덱싱 요청에 실패했습니다.",
       )
     }
-  }, [reindexDocument, selectedDocumentId])
+  }, [reindexDocument, selectedDocumentId, tenantId])
 
   const canSaveChunk =
     Boolean(editingChunk) &&
     draftContent.trim().length > 0 &&
     draftContent !== editingChunk?.content &&
-    !isUpdatingChunk
+    !isUpdatingChunk &&
+    !isReindexingDocument
 
-  const canReindex =
-    Boolean(selectedDocumentId) && !isSelectedDocumentProcessing && !isReindexing
+  const canReindex = Boolean(selectedDocumentId) && !isReindexingDocument
 
   return (
     <div className="space-y-6 p-6">
@@ -562,7 +629,7 @@ export function KnowledgePage() {
                 onClick={() => void handleReindex()}
                 className="gap-2"
               >
-                {isReindexing ? (
+                {isReindexingDocument ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <RefreshCw className="h-4 w-4" />
@@ -735,7 +802,7 @@ export function KnowledgePage() {
             value={draftContent}
             onChange={(event) => setDraftContent(event.target.value)}
             className="min-h-72"
-            disabled={isUpdatingChunk}
+            disabled={isUpdatingChunk || isReindexingDocument}
           />
           {chunkError ? (
             <p className="text-sm text-red-600">{chunkError}</p>
@@ -744,7 +811,7 @@ export function KnowledgePage() {
             <Button
               type="button"
               variant="outline"
-              disabled={isUpdatingChunk}
+              disabled={isUpdatingChunk || isReindexingDocument}
               onClick={closeChunkEditor}
             >
               취소
@@ -755,8 +822,14 @@ export function KnowledgePage() {
               onClick={() => void handleSaveChunk()}
               className="gap-2"
             >
-              {isUpdatingChunk ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              저장
+              {isUpdatingChunk || isReindexingDocument ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : null}
+              {isUpdatingChunk
+                ? "저장 중..."
+                : isReindexingDocument
+                  ? "재인덱싱 중..."
+                  : "수정하기"}
             </Button>
           </DialogFooter>
         </DialogContent>

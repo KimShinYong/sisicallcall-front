@@ -143,6 +143,17 @@ export function useReindexTenantDocument(
   documentId: string | null | undefined,
 ) {
   const queryClient = useQueryClient()
+  const invalidateDocumentQueries = () => {
+    void queryClient.invalidateQueries({
+      queryKey: tenantDocumentQueryKeys.listScope(tenantId),
+    })
+    void queryClient.invalidateQueries({
+      queryKey: tenantDocumentQueryKeys.detail(tenantId, documentId),
+    })
+    void queryClient.invalidateQueries({
+      queryKey: tenantDocumentQueryKeys.chunks(tenantId, documentId),
+    })
+  }
 
   return useMutation({
     mutationFn: () => {
@@ -153,15 +164,10 @@ export function useReindexTenantDocument(
       return reindexTenantDocument(tenantId, documentId)
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: tenantDocumentQueryKeys.listScope(tenantId),
-      })
-      void queryClient.invalidateQueries({
-        queryKey: tenantDocumentQueryKeys.detail(tenantId, documentId),
-      })
-      void queryClient.invalidateQueries({
-        queryKey: tenantDocumentQueryKeys.chunks(tenantId, documentId),
-      })
+      invalidateDocumentQueries()
+    },
+    onError: () => {
+      invalidateDocumentQueries()
     },
   })
 }
